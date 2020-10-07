@@ -15,7 +15,10 @@ type M struct {
 }
 
 func (M) Call(str string) error {
-	return nil
+	if str != "" {
+		fmt.Println(str)
+	}
+	return errors.New("the str is nil")
 }
 
 func TestIsNil(t *testing.T) {
