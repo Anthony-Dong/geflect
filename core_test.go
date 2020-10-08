@@ -1,17 +1,18 @@
-# geflect
+package geflect
 
-## 1、method 
+import (
+	"fmt"
+	"github.com/anthony-dong/geflect/common"
+	"github.com/juju/errors"
+	"reflect"
+	"testing"
+)
 
-### Feature
+type MI interface {
+}
 
-- 1、支持快速的call方法，不需要反射，不需要panic，安全使用！！！
-- 2、支持go的各种函数调用！！
-
-### Quick start
-
-```go
 type M struct {
-	name *string
+	Name *string
 	Age  int64
 }
 
@@ -21,21 +22,22 @@ func (M) Call(str string) error {
 	}
 	return errors.New("the str is nil")
 }
-```
 
-下一步就可以使用了 ！！！
+func TestIsNil(t *testing.T) {
+	var x = (*int)(nil)
+	fmt.Println(common.ViolationWithNotNil(x))
+}
 
-```go
 func TestMethod(t *testing.T) {
 	class, err := GetReflect(new(M))
 	if err != nil {
 		t.Fatal(err)
 	}
-	method, err := class.GetMethod("Call") // 获取method
+	method, err := class.GetMethod("Call")
 	if err != nil {
 		t.Fatal(err)
 	}
-	value, err := method.Call("") // 调用
+	value, err := method.Call("")
 	if err != nil {
 		t.Fatal(errors.ErrorStack(err))
 	}
@@ -44,41 +46,25 @@ func TestMethod(t *testing.T) {
 	fmt.Println(value.GetValue())  // 获取返回值
 	fmt.Println(value.GetIndex(0)) // 获取返回值
 }
-```
 
-
-
-## 2、Field
-
-### Feature
-
-- 1、支持get/set方法
-- 2、支持查看是否public
-- 3、支持查看tag信息
-
-### Quick start
-
-```go
 func TestFields(t *testing.T) {
 	str := "1111"
 	m := &M{
 		Name: &str,
 		Age:  1,
 	}
-	// 获取reflect
 	class, err := GetReflect(m)
 	if err != nil {
 		t.Fatal(errors.ErrorStack(err))
 	}
 	{
-	// 字段
 		field, err := class.FieldByName("Name")
 		if err != nil {
 			t.Fatal(errors.ErrorStack(err))
 		}
-		// 设置为空
-		fmt.Println(field.SetValue(nil))
-		fmt.Println(field.IsPublic())
+		new, _ := field.GetValue().(*string)
+		*new = "111111"
+		fmt.Println(field.GetValue().(*string))
 	}
 
 	{
@@ -89,7 +75,36 @@ func TestFields(t *testing.T) {
 		fmt.Println(field.SetValue(1000))
 		fmt.Println(field.IsPublic())
 	}
-	fmt.Println(m)
+	fmt.Println(*m.Name)
 }
-```
 
+func TestImpl(t *testing.T) {
+	fmt.Println(reflect.TypeOf((*error)(nil)).Elem())
+	fmt.Println(reflect.TypeOf((error)(nil)))
+	var x interface{}
+	x = (*error)(nil)
+	fmt.Println(x == nil)
+	x = (error)(nil)
+	fmt.Println(x == nil)
+}
+
+func BenchmarkImpl(b *testing.B) {
+	err := errors.New("err msg")
+	for i := 0; i < b.N; i++ {
+		if !reflect.TypeOf(err).Implements(common.ErrorType) {
+			b.Fatal(err)
+		}
+	}
+}
+
+func BenchmarkAssert(b *testing.B) {
+	err := errors.New("err msg")
+	for i := 0; i < b.N; i++ {
+		if err, _ := err.(error); err != nil {
+			b.Fatal(err)
+		}
+	}
+}
+
+func TestClone(t *testing.T) {
+}
